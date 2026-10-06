@@ -46,6 +46,7 @@ class OffreImporter
             $offre->setEntreprise($this->nettoyer($job['workplace']['name'] ?? $job['workplace']['legal_name'] ?? null));
             $offre->setAdresse($this->nettoyer($job['workplace']['location']['address'] ?? null));
             $offre->setUrl($job['apply']['url'] ?? null);
+            $offre->setSource($source);
 
             $this->em->persist($offre); // "prépare" l'enregistrement
             $nouvelles++;

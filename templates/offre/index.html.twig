@@ -3,75 +3,110 @@
 {% block title %}Mes offres d'alternance{% endblock %}
 
 {% block body %}
+    <a href="{{ path('app_logout') }}">Se déconnecter</a>
+
     <h1>{{ statuts[filtre] }} ({{ offres|length }})</h1>
 
-    {% for message in app.flashes('success') %}
-        <p><strong>{{ message }}</strong></p>
+    {# Messages de succès ou d'erreur #}
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <p><strong>{{ type == 'error' ? 'Erreur :' : 'OK :' }} {{ message }}</strong></p>
+        {% endfor %}
     {% endfor %}
 
-    {% for type, messages in app.flashes(['success', 'error']) %}
-    {% for message in messages %}
-        <p><strong>{{ type == 'error' ? 'fail' : 'success' }} {{ message }}</strong></p>
-    {% endfor %}
-{% endfor %}
-<a href="{{ path('app_logout') }}">Se déconnecter</a>
+    {# Rappel des relances #}
+    {% if nbARelancer > 0 %}
+        <p><a href="{{ path('app_offre', {statut: 'envoyee'}) }}">{{ nbARelancer }} candidature(s) à relancer</a></p>
+    {% endif %}
 
-<form method="post" action="{{ path('app_offre_importer') }}">
-<input type="hidden" name="_token" value="{{ csrf_token('importer') }}">
-    <label>
-        Ville
-        <input type="text" name="ville" value="Paris" required minlength="3">
-    </label>
+    {# Formulaire de recherche #}
+    <form method="post" action="{{ path('app_offre_importer') }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('importer') }}">
 
-    <label>
-        Rayon
-        <select name="rayon">
-            {% for r in [10, 30, 50, 100] %}
-                <option value="{{ r }}" {{ r == 30 ? 'selected' }}>{{ r }} km</option>
-            {% endfor %}
-        </select>
-    </label>
+        <label>
+            Ville
+            <input type="text" name="ville" value="Paris" required minlength="3">
+        </label>
 
-    <label>
-        Métier
-        <select name="metier">
-            {% for code, nom in metiers %}
-                <option value="{{ code }}">{{ nom }}</option>
-            {% endfor %}
-        </select>
-    </label>
+        <label>
+            Rayon
+            <select name="rayon">
+                {% for r in [10, 30, 50, 100] %}
+                    <option value="{{ r }}" {{ r == 30 ? 'selected' }}>{{ r }} km</option>
+                {% endfor %}
+            </select>
+        </label>
 
-    <button type="submit">Chercher de nouvelles offres</button>
-</form>
+        <label>
+            Métier
+            <select name="metier">
+                {% for code, nom in metiers %}
+                    <option value="{{ code }}">{{ nom }}</option>
+                {% endfor %}
+            </select>
+        </label>
 
-<nav>
-    {% for code, label in statuts %}
-        <a href="{{ path('app_offre', {statut: code}) }}"
-        {% if code == filtre %}style="font-weight: bold; text-decoration: none;"{% endif %}>
-            {{ label }} ({{ compteurs[code] ?? 0 }})
-        </a>
-        {% if not loop.last %} · {% endif %}
-    {% endfor %}
-</nav>
+        <label>
+            <input type="checkbox" name="uniquement_lba" checked>
+            Uniquement les offres La Bonne Alternance
+        </label>
 
+        <button type="submit">Chercher de nouvelles offres</button>
+    </form>
+
+    {# Onglets par statut #}
+    <nav>
+        {% for code, label in statuts %}
+            <a href="{{ path('app_offre', {statut: code}) }}"
+               {% if code == filtre %}style="font-weight: bold; text-decoration: none;"{% endif %}>
+                {{ label }} ({{ compteurs[code] ?? 0 }})
+            </a>
+            {% if not loop.last %} · {% endif %}
+        {% endfor %}
+    </nav>
+
+    {# Liste des offres #}
     {% for offre in offres %}
         <article>
             <h2>{{ offre.titre }}</h2>
-            <p>{{ offre.entreprise ?? 'Entreprise non précisée' }} — {{ offre.adresse }}</p>
-            <p>Statut : {{ offre.statut }} · trouvée le {{ offre.dateAjout|date('d/m/Y') }}</p>
-            {% if offre.url %}
-                <a href="{{ offre.url }}" target="_blank">Voir l'offre</a>
+            <p>{{ offre.entreprise ?? 'Entreprise non précisée' }} — {{ offre.adresse ?? 'Adresse non précisée' }}</p>
+            <p>
+                Statut : {{ offre.statutLibelle }}
+                · trouvée le {{ offre.dateAjout|date('d/m/Y') }}
+                · source : {{ offre.source == 'offres_emploi_lba' ? 'La Bonne Alternance' : (offre.source ?? 'inconnue') }}
+            </p>
+
+            {% if offre.dateCandidature %}
+                <p>
+                    Candidature envoyée le {{ offre.dateCandidature|date('d/m/Y') }}
+                    {% if offre.dateRelance %} · relancée le {{ offre.dateRelance|date('d/m/Y') }}{% endif %}
+                </p>
             {% endif %}
+
+            {% if offre.url %}
+                <a href="{{ offre.url }}" target="_blank" rel="noopener">Voir l'offre</a>
+            {% endif %}
+
+            {# Relance #}
+            {% if offre.estARelancer %}
+                <p><strong>Pas de nouvelles depuis plus de 7 jours : pense à relancer !</strong></p>
+                <form method="post" action="{{ path('app_offre_relance', {id: offre.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('relance') }}">
+                    <button type="submit">J'ai relancé</button>
+                </form>
+            {% endif %}
+
+            {# Changer le statut #}
+            <form method="post" action="{{ path('app_offre_statut', {id: offre.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('statut') }}">
+                {% for code, label in statuts %}
+                    {% if code != offre.statut %}
+                        <button type="submit" name="statut" value="{{ code }}">{{ label }}</button>
+                    {% endif %}
+                {% endfor %}
+            </form>
         </article>
-        <form method="post" action="{{ path('app_offre_statut', {id: offre.id}) }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('statut') }}">
-    {% for code, label in statuts %}
-        {% if code != offre.statut %}
-            <button type="submit" name="statut" value="{{ code }}">{{ label }}</button>
-        {% endif %}
-    {% endfor %}
-</form>
     {% else %}
-        <p>Aucune offre pour l'instant. Clique sur le bouton pour lancer une recherche.</p>
+        <p>Aucune offre ici pour l'instant.</p>
     {% endfor %}
 {% endblock %}

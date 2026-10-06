@@ -18,7 +18,7 @@ class OffreRepository extends ServiceEntityRepository
             ->where('o.statut = :statut')
             ->andWhere('COALESCE(o.dateRelance, o.dateCandidature) < :limite')
             ->setParameter('statut', 'envoyee')
-            ->setParameter('limite', new \DateTimeImmutable('-7 days'))
+            ->setParameter('limite', new \DateTimeImmutable('-' . Offre::JOURS_AVANT_RELANCE . ' days'))
             ->getQuery()
             ->getSingleScalarResult();
     }

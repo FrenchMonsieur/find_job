@@ -2,35 +2,19 @@
 
 namespace App\Controller;
 
+use App\Entity\Offre;
+use App\Repository\OffreRepository;
+use App\Service\GeoClient;
+use App\Service\OffreImporter;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Repository\OffreRepository;
-use App\Service\OffreImporter;
-use App\Service\GeoClient;
-use Symfony\Component\HttpFoundation\Request;
-use App\Entity\Offre;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class OffreController extends AbstractController
 {
-    /** Tous les codes ROME de l'informatique (M1801 à M1894), sauf ceux qui n'en sont pas */
-    private function codesInformatique(): array
-    {
-        // Télécom aux armées, cartographe, et les métiers de la météo
-        $exclus = ['M1807', 'M1808', 'M1809', 'M1888', 'M1890', 'M1891', 'M1893'];
-
-        $codes = [];
-        for ($i = 1801; $i <= 1894; $i++) {
-            $code = 'M' . $i;
-            if (!in_array($code, $exclus, true)) {
-                $codes[] = $code;
-            }
-        }
-
-        return $codes;
-    }
     // Les métiers proposés dans le formulaire (code ROME => nom)
     private const METIERS = [
         'M1805' => 'Développement informatique',
@@ -53,24 +37,8 @@ final class OffreController extends AbstractController
             'statuts' => Offre::STATUTS,
             'filtre' => $filtre,
             'compteurs' => $repository->compterParStatut(),
+            'nbARelancer' => $repository->compterARelancer(),
         ]);
-    }
-
-    #[Route('/offres/{id}/statut', name: 'app_offre_statut', methods: ['POST'])]
-    #[IsCsrfTokenValid('statut')]
-    public function changerStatut(Offre $offre, Request $request, EntityManagerInterface $em): Response
-    {
-        $statut = (string) $request->request->get('statut');
-
-        if (array_key_exists($statut, Offre::STATUTS)) {
-            $offre->setStatut($statut);
-            $em->flush(); // pas besoin de persist : l'offre est déjà en base
-        } else {
-            $this->addFlash('error', 'Statut invalide.');
-        }
-
-        // On revient sur la page d'où on vient (même onglet)
-        return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('app_offre'));
     }
 
     #[Route('/offres/importer', name: 'app_offre_importer', methods: ['POST'])]
@@ -81,7 +49,7 @@ final class OffreController extends AbstractController
         $ville = trim((string) $request->request->get('ville', ''));
         $rayon = $request->request->getInt('rayon', 30);
         $metier = (string) $request->request->get('metier', '');
-        $uniquementLba = $request->request->has('uniquement_lba');
+        $uniquementLba = $request->request->has('uniquement_lba'); // case cochée ou non
 
         // 2. On vérifie que les valeurs sont autorisées
         if (!array_key_exists($metier, self::METIERS) || $rayon < 1 || $rayon > 200) {
@@ -101,5 +69,37 @@ final class OffreController extends AbstractController
         $this->addFlash('success', "$nb nouvelle(s) offre(s) autour de {$lieu['nom']}");
 
         return $this->redirectToRoute('app_offre');
+    }
+
+    #[Route('/offres/{id}/statut', name: 'app_offre_statut', methods: ['POST'])]
+    #[IsCsrfTokenValid('statut')]
+    public function changerStatut(Offre $offre, Request $request, EntityManagerInterface $em): Response
+    {
+        $statut = (string) $request->request->get('statut');
+
+        if (array_key_exists($statut, Offre::STATUTS)) {
+            $offre->setStatut($statut);
+            $em->flush(); // pas besoin de persist : l'offre est déjà en base
+        } else {
+            $this->addFlash('error', 'Statut invalide.');
+        }
+
+        return $this->retourPagePrecedente($request);
+    }
+
+    #[Route('/offres/{id}/relance', name: 'app_offre_relance', methods: ['POST'])]
+    #[IsCsrfTokenValid('relance')]
+    public function relancer(Offre $offre, Request $request, EntityManagerInterface $em): Response
+    {
+        $offre->marquerRelancee();
+        $em->flush();
+
+        return $this->retourPagePrecedente($request);
+    }
+
+    /** Revient sur la page d'où on vient (même onglet), ou sur l'accueil */
+    private function retourPagePrecedente(Request $request): Response
+    {
+        return $this->redirect($request->headers->get('referer') ?? $this->generateUrl('app_offre'));
     }
 }

@@ -16,6 +16,10 @@ class Offre
         'refusee' => 'Refusée',
         'ignoree' => 'Pas intéressé',
     ];
+
+    /** Nombre de jours sans nouvelles avant de proposer une relance */
+    public const JOURS_AVANT_RELANCE = 7;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -41,6 +45,16 @@ class Offre
 
     #[ORM\Column]
     private ?\DateTimeImmutable $dateAjout = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $source = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $dateCandidature = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $dateRelance = null;
+
     public function __construct()
     {
         $this->statut = 'nouvelle';
@@ -93,7 +107,7 @@ class Offre
         return $this->adresse;
     }
 
-    public function setAdresse(string $adresse): static
+    public function setAdresse(?string $adresse): static
     {
         $this->adresse = $adresse;
 
@@ -105,7 +119,7 @@ class Offre
         return $this->url;
     }
 
-    public function setUrl(string $url): static
+    public function setUrl(?string $url): static
     {
         $this->url = $url;
 
@@ -115,6 +129,12 @@ class Offre
     public function getStatut(): ?string
     {
         return $this->statut;
+    }
+
+    /** Le statut lisible, par exemple "À postuler" au lieu de "a_postuler" */
+    public function getStatutLibelle(): string
+    {
+        return self::STATUTS[$this->statut] ?? $this->statut;
     }
 
     public function setStatut(string $statut): static
@@ -138,11 +158,26 @@ class Offre
         return $this->dateAjout;
     }
 
-    public function setDateAjout(\DateTimeImmutable $dateAjout): static
+    public function getSource(): ?string
     {
-        $this->dateAjout = $dateAjout;
+        return $this->source;
+    }
+
+    public function setSource(?string $source): static
+    {
+        $this->source = $source;
 
         return $this;
+    }
+
+    public function getDateCandidature(): ?\DateTimeImmutable
+    {
+        return $this->dateCandidature;
+    }
+
+    public function getDateRelance(): ?\DateTimeImmutable
+    {
+        return $this->dateRelance;
     }
 
     /** Date du dernier contact : la relance si elle existe, sinon la candidature */
@@ -151,14 +186,15 @@ class Offre
         return $this->dateRelance ?? $this->dateCandidature;
     }
 
-    /** Vrai si envoyée, sans réponse, et dernier contact il y a plus de 7 jours */
+    /** Vrai si envoyée, sans réponse, et dernier contact trop ancien */
     public function estARelancer(): bool
     {
         $dernierContact = $this->getDernierContact();
+        $limite = new \DateTimeImmutable('-' . self::JOURS_AVANT_RELANCE . ' days');
 
         return $this->statut === 'envoyee'
             && $dernierContact !== null
-            && $dernierContact < new \DateTimeImmutable('-7 days');
+            && $dernierContact < $limite;
     }
 
     public function marquerRelancee(): static
