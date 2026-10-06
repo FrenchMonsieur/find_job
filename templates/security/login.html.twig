@@ -1,27 +1,32 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Connexion{% endblock %}
+{% block title %}Connexion – find_job{% endblock %}
 
 {% block body %}
-    <h1>Connexion</h1>
+<div class="page">
+    <div class="connexion">
+        <span class="logo">find_job</span>
+        <h1>Connexion</h1>
 
-    {% if erreur %}
-        <p>❌ {{ erreur.messageKey|trans(erreur.messageData, 'security') }}</p>
-    {% endif %}
+        {% if erreur %}
+            <p class="message message-erreur" role="alert">{{ erreur.messageKey|trans(erreur.messageData, 'security') }}</p>
+        {% endif %}
 
-    <form method="post" action="{{ path('app_login') }}">
-        <label>
-            Identifiant
-            <input type="text" name="_username" value="{{ dernier_identifiant }}" required autocomplete="username">
-        </label>
+        <form method="post" action="{{ path('app_login') }}">
+            <label class="champ">
+                Identifiant
+                <input type="text" name="_username" value="{{ dernier_identifiant }}" required autocomplete="username">
+            </label>
 
-        <label>
-            Mot de passe
-            <input type="password" name="_password" required autocomplete="current-password">
-        </label>
+            <label class="champ">
+                Mot de passe
+                <input type="password" name="_password" required autocomplete="current-password">
+            </label>
 
-        <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+            <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
 
-        <button type="submit">Se connecter</button>
-    </form>
+            <button type="submit" class="bouton-principal">Se connecter</button>
+        </form>
+    </div>
+</div>
 {% endblock %}

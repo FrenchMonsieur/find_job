@@ -1,3 +1,472 @@
+/* =========================================================
+   find_job : feuille de style
+   - Une seule police : Atkinson Hyperlegible, dessinée pour être
+     facile à lire (lettres bien distinctes : I/l/1, O/0...).
+   - Un bleu "encre" pour le texte, un jaune pour les actions
+     importantes (chercher, relancer).
+   - Une couleur par statut, utilisée partout de la même façon :
+     onglets, bord gauche des offres, boutons "Déplacer vers".
+   ========================================================= */
+
+/* ---------- 1. Les variables (les "réglages" du design) ---------- */
+:root {
+    /* Couleurs de base */
+    --fond: #e8edf2;          /* gris-bleu clair derrière tout */
+    --surface: #ffffff;       /* fond des cartes et champs */
+    --encre: #1b2b3c;         /* texte principal */
+    --encre-douce: #566778;   /* texte secondaire (dates, source...) */
+    --trait: #cfd8e1;         /* bordures discrètes */
+    --jaune: #f5b700;         /* action principale */
+    --jaune-clair: #fff4cc;   /* fond des alertes de relance */
+
+    /* Une couleur par statut (toutes lisibles sur fond blanc) */
+    --c-nouvelle: #2b6cd4;
+    --c-a_postuler: #975a16;
+    --c-envoyee: #276749;
+    --c-refusee: #c53030;
+    --c-ignoree: #66727f;
+
+    --rayon: 12px;
+    --police: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Chaque élément qui porte la classe d'un statut récupère sa couleur
+   dans --couleur. Ensuite, le reste du CSS utilise juste var(--couleur). */
+.statut-nouvelle   { --couleur: var(--c-nouvelle); }
+.statut-a_postuler { --couleur: var(--c-a_postuler); }
+.statut-envoyee    { --couleur: var(--c-envoyee); }
+.statut-refusee    { --couleur: var(--c-refusee); }
+.statut-ignoree    { --couleur: var(--c-ignoree); }
+
+
+/* ---------- 2. La base ---------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
-    background-color: skyblue;
+    margin: 0;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: var(--police);
+    font-size: 1.0625rem;   /* 17px : confortable sur téléphone */
+    line-height: 1.5;
+}
+
+h1, h2, p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+}
+
+/* Contour bien visible quand on navigue au clavier */
+:focus-visible {
+    outline: 3px solid var(--c-nouvelle);
+    outline-offset: 2px;
+}
+
+/* Texte lu par les lecteurs d'écran mais invisible à l'écran */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Colonne centrale : pleine largeur sur téléphone, limitée sur ordinateur */
+.page {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 1rem 1rem 3rem;
+}
+
+
+/* ---------- 3. Les boutons et champs ---------- */
+button,
+input,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+.bouton-principal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;          /* 44px : taille minimale pour un doigt */
+    padding: 0.5rem 1.25rem;
+    border: 0;
+    border-radius: 8px;
+    background: var(--jaune);
+    color: var(--encre);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.bouton-principal:hover {
+    background: #e0a800;
+}
+
+.champ {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-weight: 700;
+}
+
+.champ input,
+.champ select {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--trait);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 1rem;              /* 16px minimum : évite le zoom auto sur iPhone */
+    font-weight: 400;
+}
+
+.champ input:focus,
+.champ select:focus {
+    border-color: var(--encre);
+}
+
+
+/* ---------- 4. L'en-tête ---------- */
+.entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.logo {
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+}
+
+/* Le petit carré jaune devant le nom de l'app */
+.logo::before {
+    content: "";
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    margin-right: 0.45rem;
+    border-radius: 3px;
+    background: var(--jaune);
+    vertical-align: -0.05em;
+}
+
+.deconnexion {
+    color: var(--encre-douce);
+    font-size: 0.95rem;
+}
+
+
+/* ---------- 5. Messages et bandeau de relance ---------- */
+.message {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-left: 5px solid;
+    background: var(--surface);
+    font-weight: 700;
+}
+
+.message-succes { border-color: var(--c-envoyee); }
+.message-erreur { border-color: var(--c-refusee); color: var(--c-refusee); }
+
+.bandeau-relance {
+    display: block;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    background: var(--jaune-clair);
+    border-left: 5px solid var(--jaune);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.bandeau-relance:hover {
+    text-decoration: underline;
+}
+
+
+/* ---------- 6. Le formulaire de recherche (repliable) ---------- */
+.recherche {
+    margin-bottom: 1.25rem;
+    border-radius: var(--rayon);
+    background: var(--surface);
+    border: 1px solid var(--trait);
+}
+
+.recherche summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 3rem;
+    padding: 0.6rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+}
+
+.recherche summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Le "+" devient "−" quand le formulaire est ouvert */
+.recherche summary::after {
+    content: "+";
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--encre-douce);
+}
+
+.recherche[open] summary::after {
+    content: "−";
+}
+
+.formulaire-recherche {
+    display: grid;
+    gap: 1rem;
+    padding: 0 1rem 1rem;
+}
+
+.case {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    cursor: pointer;
+}
+
+.case input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+    accent-color: var(--encre);
+}
+
+/* Sur un écran assez large : rayon et métier côte à côte */
+@media (min-width: 40rem) {
+    .formulaire-recherche {
+        grid-template-columns: 1fr 2fr;
+    }
+
+    .champ-ville,
+    .case,
+    .formulaire-recherche .bouton-principal {
+        grid-column: 1 / -1;
+    }
+
+    .formulaire-recherche .bouton-principal {
+        justify-self: start;
+    }
+}
+
+
+/* ---------- 7. Les onglets de statut ---------- */
+/* Les onglets passent à la ligne s'il n'y a pas la place :
+   tout reste visible, même sur un petit écran */
+.onglets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.onglet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.5rem;
+    padding: 0.3rem 0.9rem;
+    border: 2px solid var(--couleur);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--couleur);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.onglet .compteur {
+    min-width: 1.6em;
+    padding: 0 0.4em;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--couleur) 14%, white);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* L'onglet affiché est rempli de sa couleur */
+.onglet.actif {
+    background: var(--couleur);
+    color: #fff;
+}
+
+.onglet.actif .compteur {
+    background: rgb(255 255 255 / 0.25);
+}
+
+
+/* ---------- 8. La liste des offres ---------- */
+.titre-liste {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.titre-liste .nombre {
+    color: var(--encre-douce);
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.offre {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1rem 1rem 1rem 1.15rem;
+    border: 1px solid var(--trait);
+    border-left: 6px solid var(--couleur);   /* la couleur du statut */
+    border-radius: var(--rayon);
+    background: var(--surface);
+}
+
+.offre h2 {
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.offre .entreprise {
+    font-weight: 700;
+}
+
+.offre .adresse {
+    color: var(--encre-douce);
+}
+
+/* Petites infos : chaque info sur sa ligne si l'écran est étroit */
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1.25rem;
+    color: var(--encre-douce);
+    font-size: 0.9rem;
+}
+
+.alerte-relance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: var(--jaune-clair);
+    font-weight: 700;
+}
+
+.bouton-offre {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 8px;
+    background: var(--encre);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.bouton-offre:hover {
+    background: #2c4058;
+}
+
+/* Les boutons "Déplacer vers" */
+.deplacer {
+    display: grid;
+    gap: 0.4rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--trait);
+}
+
+.deplacer-label {
+    color: var(--encre-douce);
+    font-size: 0.9rem;
+}
+
+.deplacer-boutons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.bouton-statut {
+    min-height: 2.75rem;
+    padding: 0.3rem 0.95rem;
+    border: 2px solid var(--couleur);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--couleur);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.bouton-statut:hover {
+    background: color-mix(in srgb, var(--couleur) 10%, white);
+}
+
+/* Liste vide */
+.vide {
+    padding: 2rem 1rem;
+    border: 2px dashed var(--trait);
+    border-radius: var(--rayon);
+    color: var(--encre-douce);
+    text-align: center;
+}
+
+
+/* ---------- 9. La page de connexion ---------- */
+.connexion {
+    max-width: 24rem;
+    margin: 12vh auto 0;
+    padding: 1.5rem;
+    border: 1px solid var(--trait);
+    border-radius: var(--rayon);
+    background: var(--surface);
+}
+
+.connexion .logo {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.connexion h1 {
+    margin-bottom: 1.25rem;
+    font-size: 1.5rem;
+}
+
+.connexion form {
+    display: grid;
+    gap: 1rem;
+}
+
+.connexion .message {
+    border: 1px solid var(--trait);
+    border-left: 5px solid var(--c-refusee);
 }

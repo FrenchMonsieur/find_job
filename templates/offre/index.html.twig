@@ -1,112 +1,148 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Mes offres d'alternance{% endblock %}
+{% block title %}{{ statuts[filtre] }} – find_job{% endblock %}
 
 {% block body %}
-    <a href="{{ path('app_logout') }}">Se déconnecter</a>
+<div class="page">
 
-    <h1>{{ statuts[filtre] }} ({{ offres|length }})</h1>
+    {# En-tête #}
+    <header class="entete">
+        <a class="logo" href="{{ path('app_offre') }}">find_job</a>
+        <a class="deconnexion" href="{{ path('app_logout') }}">Se déconnecter</a>
+    </header>
 
     {# Messages de succès ou d'erreur #}
     {% for type, messages in app.flashes %}
         {% for message in messages %}
-            <p><strong>{{ type == 'error' ? 'Erreur :' : 'OK :' }} {{ message }}</strong></p>
+            <p class="message message-{{ type == 'error' ? 'erreur' : 'succes' }}" role="status">{{ message }}</p>
         {% endfor %}
     {% endfor %}
 
-    {# Rappel des relances #}
-    {% if nbARelancer > 0 %}
-        <p><a href="{{ path('app_offre', {statut: 'envoyee'}) }}">{{ nbARelancer }} candidature(s) à relancer</a></p>
+    {# Rappel des relances (pas besoin sur l'onglet "Envoyée", les offres y sont déjà signalées) #}
+    {% if nbARelancer > 0 and filtre != 'envoyee' %}
+        <a class="bandeau-relance" href="{{ path('app_offre', {statut: 'envoyee'}) }}">
+            {{ nbARelancer }} candidature{{ nbARelancer > 1 ? 's' }} à relancer
+        </a>
     {% endif %}
 
-    {# Formulaire de recherche #}
-    <form method="post" action="{{ path('app_offre_importer') }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('importer') }}">
+    {# Formulaire de recherche : replié par défaut, ouvert s'il n'y a encore aucune offre #}
+    <details class="recherche" {% if offres is empty and filtre == 'nouvelle' %}open{% endif %}>
+        <summary>Chercher de nouvelles offres</summary>
 
-        <label>
-            Ville
-            <input type="text" name="ville" value="Paris" required minlength="3">
-        </label>
+        <form method="post" action="{{ path('app_offre_importer') }}" class="formulaire-recherche">
+            <input type="hidden" name="_token" value="{{ csrf_token('importer') }}">
 
-        <label>
-            Rayon
-            <select name="rayon">
-                {% for r in [10, 30, 50, 100] %}
-                    <option value="{{ r }}" {{ r == 30 ? 'selected' }}>{{ r }} km</option>
-                {% endfor %}
-            </select>
-        </label>
+            <label class="champ champ-ville">
+                Ville
+                <input type="text" name="ville" value="Paris" required minlength="3" autocomplete="address-level2">
+            </label>
 
-        <label>
-            Métier
-            <select name="metier">
-                {% for code, nom in metiers %}
-                    <option value="{{ code }}">{{ nom }}</option>
-                {% endfor %}
-            </select>
-        </label>
+            <label class="champ">
+                Rayon
+                <select name="rayon">
+                    {% for r in [10, 30, 50, 100] %}
+                        <option value="{{ r }}" {{ r == 30 ? 'selected' }}>{{ r }} km</option>
+                    {% endfor %}
+                </select>
+            </label>
 
-        <label>
-            <input type="checkbox" name="uniquement_lba" checked>
-            Uniquement les offres La Bonne Alternance
-        </label>
+            <label class="champ">
+                Métier
+                <select name="metier">
+                    {% for code, nom in metiers %}
+                        <option value="{{ code }}">{{ nom }}</option>
+                    {% endfor %}
+                </select>
+            </label>
 
-        <button type="submit">Chercher de nouvelles offres</button>
-    </form>
+            <label class="case">
+                <input type="checkbox" name="uniquement_lba" checked>
+                <span>Uniquement les offres La Bonne Alternance</span>
+            </label>
+
+            <button type="submit" class="bouton-principal">Chercher</button>
+        </form>
+    </details>
 
     {# Onglets par statut #}
-    <nav>
+    <nav class="onglets" aria-label="Statut des offres">
         {% for code, label in statuts %}
             <a href="{{ path('app_offre', {statut: code}) }}"
-               {% if code == filtre %}style="font-weight: bold; text-decoration: none;"{% endif %}>
-                {{ label }} ({{ compteurs[code] ?? 0 }})
+               class="onglet statut-{{ code }}{{ code == filtre ? ' actif' }}"
+               {% if code == filtre %}aria-current="page"{% endif %}>
+                {{ label }}
+                <span class="compteur">{{ compteurs[code] ?? 0 }}</span>
             </a>
-            {% if not loop.last %} · {% endif %}
         {% endfor %}
     </nav>
 
+    <h1 class="titre-liste">
+        {{ statuts[filtre] }}
+        <span class="nombre">{{ offres|length }} offre{{ offres|length > 1 ? 's' }}</span>
+    </h1>
+
     {# Liste des offres #}
     {% for offre in offres %}
-        <article>
+        <article class="offre statut-{{ offre.statut }}">
             <h2>{{ offre.titre }}</h2>
-            <p>{{ offre.entreprise ?? 'Entreprise non précisée' }} — {{ offre.adresse ?? 'Adresse non précisée' }}</p>
-            <p>
-                Statut : {{ offre.statutLibelle }}
-                · trouvée le {{ offre.dateAjout|date('d/m/Y') }}
-                · source : {{ offre.source == 'offres_emploi_lba' ? 'La Bonne Alternance' : (offre.source ?? 'inconnue') }}
+
+            <div>
+                <p class="entreprise">{{ offre.entreprise ?? 'Entreprise non précisée' }}</p>
+                {% if offre.adresse %}
+                    <p class="adresse">{{ offre.adresse }}</p>
+                {% endif %}
+            </div>
+
+            <p class="meta">
+                <span>Trouvée le {{ offre.dateAjout|date('d/m/Y') }}</span>
+                <span>Source : {{ offre.source == 'offres_emploi_lba' ? 'La Bonne Alternance' : (offre.source ?? 'inconnue') }}</span>
+                {% if offre.dateCandidature %}
+                    <span>Envoyée le {{ offre.dateCandidature|date('d/m/Y') }}</span>
+                {% endif %}
+                {% if offre.dateRelance %}
+                    <span>Relancée le {{ offre.dateRelance|date('d/m/Y') }}</span>
+                {% endif %}
             </p>
-
-            {% if offre.dateCandidature %}
-                <p>
-                    Candidature envoyée le {{ offre.dateCandidature|date('d/m/Y') }}
-                    {% if offre.dateRelance %} · relancée le {{ offre.dateRelance|date('d/m/Y') }}{% endif %}
-                </p>
-            {% endif %}
-
-            {% if offre.url %}
-                <a href="{{ offre.url }}" target="_blank" rel="noopener">Voir l'offre</a>
-            {% endif %}
 
             {# Relance #}
             {% if offre.estARelancer %}
-                <p><strong>Pas de nouvelles depuis plus de 7 jours : pense à relancer !</strong></p>
-                <form method="post" action="{{ path('app_offre_relance', {id: offre.id}) }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('relance') }}">
-                    <button type="submit">J'ai relancé</button>
-                </form>
+                <div class="alerte-relance">
+                    <p>Pas de nouvelles depuis plus de {{ constant('App\\Entity\\Offre::JOURS_AVANT_RELANCE') }} jours.</p>
+                    <form method="post" action="{{ path('app_offre_relance', {id: offre.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('relance') }}">
+                        <button type="submit" class="bouton-principal">J'ai relancé</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {% if offre.url %}
+                <a class="bouton-offre" href="{{ offre.url }}" target="_blank" rel="noopener">
+                    Voir l'offre<span class="visually-hidden"> (nouvel onglet)</span>
+                </a>
             {% endif %}
 
             {# Changer le statut #}
-            <form method="post" action="{{ path('app_offre_statut', {id: offre.id}) }}">
+            <form method="post" action="{{ path('app_offre_statut', {id: offre.id}) }}" class="deplacer">
                 <input type="hidden" name="_token" value="{{ csrf_token('statut') }}">
-                {% for code, label in statuts %}
-                    {% if code != offre.statut %}
-                        <button type="submit" name="statut" value="{{ code }}">{{ label }}</button>
-                    {% endif %}
-                {% endfor %}
+                <span class="deplacer-label">Déplacer vers</span>
+                <div class="deplacer-boutons">
+                    {% for code, label in statuts %}
+                        {% if code != offre.statut %}
+                            <button type="submit" name="statut" value="{{ code }}" class="bouton-statut statut-{{ code }}">{{ label }}</button>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </form>
         </article>
     {% else %}
-        <p>Aucune offre ici pour l'instant.</p>
+        <div class="vide">
+            {% if filtre == 'nouvelle' %}
+                <p>Aucune nouvelle offre. Lance une recherche pour en trouver.</p>
+            {% else %}
+                <p>Aucune offre dans « {{ statuts[filtre] }} ».</p>
+            {% endif %}
+        </div>
     {% endfor %}
+
+</div>
 {% endblock %}
