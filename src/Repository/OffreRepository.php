@@ -11,6 +11,17 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class OffreRepository extends ServiceEntityRepository
 {
+    public function compterARelancer(): int
+    {
+        return (int) $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)')
+            ->where('o.statut = :statut')
+            ->andWhere('COALESCE(o.dateRelance, o.dateCandidature) < :limite')
+            ->setParameter('statut', 'envoyee')
+            ->setParameter('limite', new \DateTimeImmutable('-7 days'))
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
     /** Renvoie par exemple ['nouvelle' => 12, 'a_postuler' => 3] */
     public function compterParStatut(): array
     {

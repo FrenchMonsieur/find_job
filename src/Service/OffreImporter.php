@@ -5,9 +5,10 @@ namespace App\Service;
 use App\Entity\Offre;
 use App\Repository\OffreRepository;
 use Doctrine\ORM\EntityManagerInterface;
-
 class OffreImporter
 {
+
+    public const SOURCE_LBA = 'offres_emploi_lba';
     public function __construct(
         private OffreClient $client,
         private OffreRepository $repository,
@@ -16,7 +17,7 @@ class OffreImporter
     }
 
     /** Va chercher les offres, enregistre les nouvelles et renvoie combien ont été ajoutées */
-    public function importer(float $latitude, float $longitude, int $rayon, string $romes): int
+    public function importer(float $latitude, float $longitude, int $rayon, ?array $romes, bool $uniquementLba = true): int
     {
         $resultats = $this->client->rechercher($latitude, $longitude, $rayon, $romes);
         $nouvelles = 0;
@@ -24,7 +25,11 @@ class OffreImporter
 
         foreach ($resultats['jobs'] as $job) {
             $lbaId = $job['identifier']['id'] ?? null;
-
+             // On saute les offres des sites partenaires si on ne veut que La Bonne Alternance
+            $source = $job['identifier']['partner_label'] ?? null;
+            if ($uniquementLba && $source !== self::SOURCE_LBA) {
+                continue;
+            }
             // On saute l'offre si : pas d'identifiant, déjà vue dans ce lot, ou déjà en base
             if (
                 $lbaId === null

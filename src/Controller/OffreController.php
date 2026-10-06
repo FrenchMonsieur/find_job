@@ -15,6 +15,22 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class OffreController extends AbstractController
 {
+    /** Tous les codes ROME de l'informatique (M1801 à M1894), sauf ceux qui n'en sont pas */
+    private function codesInformatique(): array
+    {
+        // Télécom aux armées, cartographe, et les métiers de la météo
+        $exclus = ['M1807', 'M1808', 'M1809', 'M1888', 'M1890', 'M1891', 'M1893'];
+
+        $codes = [];
+        for ($i = 1801; $i <= 1894; $i++) {
+            $code = 'M' . $i;
+            if (!in_array($code, $exclus, true)) {
+                $codes[] = $code;
+            }
+        }
+
+        return $codes;
+    }
     // Les métiers proposés dans le formulaire (code ROME => nom)
     private const METIERS = [
         'M1805' => 'Développement informatique',
@@ -65,6 +81,7 @@ final class OffreController extends AbstractController
         $ville = trim((string) $request->request->get('ville', ''));
         $rayon = $request->request->getInt('rayon', 30);
         $metier = (string) $request->request->get('metier', '');
+        $uniquementLba = $request->request->has('uniquement_lba');
 
         // 2. On vérifie que les valeurs sont autorisées
         if (!array_key_exists($metier, self::METIERS) || $rayon < 1 || $rayon > 200) {
@@ -80,7 +97,7 @@ final class OffreController extends AbstractController
         }
 
         // 4. On lance l'import
-        $nb = $importer->importer($lieu['latitude'], $lieu['longitude'], $rayon, $metier);
+        $nb = $importer->importer($lieu['latitude'], $lieu['longitude'], $rayon, [$metier], $uniquementLba);
         $this->addFlash('success', "$nb nouvelle(s) offre(s) autour de {$lieu['nom']}");
 
         return $this->redirectToRoute('app_offre');

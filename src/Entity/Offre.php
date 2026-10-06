@@ -123,6 +123,11 @@ class Offre
             throw new \InvalidArgumentException("Statut inconnu : $statut");
         }
 
+        // Première fois qu'on la marque "envoyée" : on note la date automatiquement
+        if ($statut === 'envoyee' && $this->dateCandidature === null) {
+            $this->dateCandidature = new \DateTimeImmutable();
+        }
+
         $this->statut = $statut;
 
         return $this;
@@ -136,6 +141,29 @@ class Offre
     public function setDateAjout(\DateTimeImmutable $dateAjout): static
     {
         $this->dateAjout = $dateAjout;
+
+        return $this;
+    }
+
+    /** Date du dernier contact : la relance si elle existe, sinon la candidature */
+    public function getDernierContact(): ?\DateTimeImmutable
+    {
+        return $this->dateRelance ?? $this->dateCandidature;
+    }
+
+    /** Vrai si envoyée, sans réponse, et dernier contact il y a plus de 7 jours */
+    public function estARelancer(): bool
+    {
+        $dernierContact = $this->getDernierContact();
+
+        return $this->statut === 'envoyee'
+            && $dernierContact !== null
+            && $dernierContact < new \DateTimeImmutable('-7 days');
+    }
+
+    public function marquerRelancee(): static
+    {
+        $this->dateRelance = new \DateTimeImmutable();
 
         return $this;
     }

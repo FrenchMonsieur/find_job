@@ -16,16 +16,28 @@ class OffreClient
     ) {
     }
 
-    public function rechercher(float $latitude, float $longitude, int $rayon, string $romes): array
+    public function rechercher(float $latitude, float $longitude, int $rayon, ?array $romes, array $sourcesExclues = []): array
     {
-        $response = $this->httpClient->request('GET', self::URL, [
+        $parametres = [
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'radius' => $rayon,
+        ];
+
+        // Pas de codes métier = pas de filtre = tous les secteurs
+        if ($romes) {
+            $parametres['romes'] = implode(',', $romes);
+        }
+
+        $query = http_build_query($parametres);
+
+        // L'API veut le paramètre répété : &partners_to_exclude=A&partners_to_exclude=B
+        foreach ($sourcesExclues as $source) {
+            $query .= '&partners_to_exclude=' . rawurlencode($source);
+        }
+
+        $response = $this->httpClient->request('GET', self::URL . '?' . $query, [
             'auth_bearer' => $this->token,
-            'query' => [
-                'latitude' => $latitude,
-                'longitude' => $longitude,
-                'rayon' => $rayon,
-                'romes' => $romes,
-            ],
         ]);
 
         return $response->toArray();
