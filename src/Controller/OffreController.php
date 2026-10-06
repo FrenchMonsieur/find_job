@@ -22,6 +22,41 @@ final class OffreController extends AbstractController
         'M1810' => 'Production et exploitation informatique',
     ];
 
+    // Pour chaque métier du menu : le code principal + tous ses sous-codes (référentiel ROME officiel)
+    private const FAMILLES_ROME = [
+        'M1805' => [
+            'M1805',
+            'M1813',
+            'M1814',
+            'M1815',
+            'M1818',
+            'M1821',
+            'M1824',
+            'M1827',
+            'M1831',
+            'M1832',
+            'M1836',
+            'M1837',
+            'M1841',
+            'M1842',
+            'M1844',
+            'M1848',
+            'M1851',
+            'M1852',
+            'M1853',
+            'M1855',
+            'M1858',
+            'M1859',
+            'M1861',
+            'M1883',
+            'M1887',
+            'M1889',
+            'M1892'
+        ],
+        'M1801' => ['M1801', 'M1817', 'M1830', 'M1834', 'M1843', 'M1849', 'M1854', 'M1857', 'M1894'],
+        'M1810' => ['M1810', 'M1816', 'M1869', 'M1876', 'M1884'],
+    ];
+
     #[Route('/', name: 'app_offre')]
     public function index(Request $request, OffreRepository $repository): Response
     {
@@ -65,7 +100,7 @@ final class OffreController extends AbstractController
         }
 
         // 4. On lance l'import
-        $nb = $importer->importer($lieu['latitude'], $lieu['longitude'], $rayon, [$metier], $uniquementLba);
+        $nb = $importer->importer($lieu['latitude'], $lieu['longitude'], $rayon, self::FAMILLES_ROME[$metier], $uniquementLba);
         $this->addFlash('success', "$nb nouvelle(s) offre(s) autour de {$lieu['nom']}");
 
         return $this->redirectToRoute('app_offre');
