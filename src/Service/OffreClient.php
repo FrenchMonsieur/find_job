@@ -20,10 +20,10 @@ class OffreClient
         $response = $this->httpClient->request('GET', self::URL, [
             'auth_bearer' => $this->token,
             'query' => [
-                '48.8566' => $latitude,
-                '2.3522' => $longitude,
-                '30' => $rayon,
-                'M1805' => $romes,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'rayon' => $rayon,
+                'romes' => $romes,
             ],
         ]);
 

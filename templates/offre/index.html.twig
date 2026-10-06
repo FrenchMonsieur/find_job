@@ -9,9 +9,38 @@
         <p><strong>{{ message }}</strong></p>
     {% endfor %}
 
-    <form method="post" action="{{ path('app_offre_importer') }}">
-        <button type="submit">🔍 Chercher de nouvelles offres</button>
-    </form>
+    {% for type, messages in app.flashes(['success', 'error']) %}
+    {% for message in messages %}
+        <p><strong>{{ type == 'error' ? '❌' : '✅' }} {{ message }}</strong></p>
+    {% endfor %}
+{% endfor %}
+
+<form method="post" action="{{ path('app_offre_importer') }}">
+    <label>
+        Ville
+        <input type="text" name="ville" value="Paris" required minlength="3">
+    </label>
+
+    <label>
+        Rayon
+        <select name="rayon">
+            {% for r in [10, 30, 50, 100] %}
+                <option value="{{ r }}" {{ r == 30 ? 'selected' }}>{{ r }} km</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>
+        Métier
+        <select name="metier">
+            {% for code, nom in metiers %}
+                <option value="{{ code }}">{{ nom }}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <button type="submit">Chercher de nouvelles offres</button>
+</form>
 
     {% for offre in offres %}
         <article>
