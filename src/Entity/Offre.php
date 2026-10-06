@@ -9,6 +9,13 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: OffreRepository::class)]
 class Offre
 {
+    public const STATUTS = [
+        'nouvelle' => 'Nouvelle',
+        'a_postuler' => 'À postuler',
+        'envoyee' => 'Envoyée',
+        'refusee' => 'Refusée',
+        'ignoree' => 'Pas intéressé',
+    ];
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -35,10 +42,10 @@ class Offre
     #[ORM\Column]
     private ?\DateTimeImmutable $dateAjout = null;
     public function __construct()
-{
-    $this->statut = 'nouvelle';
-    $this->dateAjout = new \DateTimeImmutable();
-}
+    {
+        $this->statut = 'nouvelle';
+        $this->dateAjout = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -112,6 +119,10 @@ class Offre
 
     public function setStatut(string $statut): static
     {
+        if (!array_key_exists($statut, self::STATUTS)) {
+            throw new \InvalidArgumentException("Statut inconnu : $statut");
+        }
+
         $this->statut = $statut;
 
         return $this;

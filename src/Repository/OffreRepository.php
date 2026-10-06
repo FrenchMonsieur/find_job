@@ -11,12 +11,23 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class OffreRepository extends ServiceEntityRepository
 {
+    /** Renvoie par exemple ['nouvelle' => 12, 'a_postuler' => 3] */
+    public function compterParStatut(): array
+    {
+        $lignes = $this->createQueryBuilder('o')
+            ->select('o.statut, COUNT(o.id) AS total')
+            ->groupBy('o.statut')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column($lignes, 'total', 'statut');
+    }
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Offre::class);
     }
 
-//    /**
+    //    /**
 //     * @return Offre[] Returns an array of Offre objects
 //     */
 //    public function findByExampleField($value): array
@@ -31,7 +42,7 @@ class OffreRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?Offre
+    //    public function findOneBySomeField($value): ?Offre
 //    {
 //        return $this->createQueryBuilder('o')
 //            ->andWhere('o.exampleField = :val')

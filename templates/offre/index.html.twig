@@ -3,7 +3,7 @@
 {% block title %}Mes offres d'alternance{% endblock %}
 
 {% block body %}
-    <h1>Mes offres ({{ offres|length }})</h1>
+    <h1>{{ statuts[filtre] }} ({{ offres|length }})</h1>
 
     {% for message in app.flashes('success') %}
         <p><strong>{{ message }}</strong></p>
@@ -11,11 +11,13 @@
 
     {% for type, messages in app.flashes(['success', 'error']) %}
     {% for message in messages %}
-        <p><strong>{{ type == 'error' ? '❌' : '✅' }} {{ message }}</strong></p>
+        <p><strong>{{ type == 'error' ? 'fail' : 'success' }} {{ message }}</strong></p>
     {% endfor %}
 {% endfor %}
+<a href="{{ path('app_logout') }}">Se déconnecter</a>
 
 <form method="post" action="{{ path('app_offre_importer') }}">
+<input type="hidden" name="_token" value="{{ csrf_token('importer') }}">
     <label>
         Ville
         <input type="text" name="ville" value="Paris" required minlength="3">
@@ -42,6 +44,16 @@
     <button type="submit">Chercher de nouvelles offres</button>
 </form>
 
+<nav>
+    {% for code, label in statuts %}
+        <a href="{{ path('app_offre', {statut: code}) }}"
+        {% if code == filtre %}style="font-weight: bold; text-decoration: none;"{% endif %}>
+            {{ label }} ({{ compteurs[code] ?? 0 }})
+        </a>
+        {% if not loop.last %} · {% endif %}
+    {% endfor %}
+</nav>
+
     {% for offre in offres %}
         <article>
             <h2>{{ offre.titre }}</h2>
@@ -51,6 +63,14 @@
                 <a href="{{ offre.url }}" target="_blank">Voir l'offre</a>
             {% endif %}
         </article>
+        <form method="post" action="{{ path('app_offre_statut', {id: offre.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('statut') }}">
+    {% for code, label in statuts %}
+        {% if code != offre.statut %}
+            <button type="submit" name="statut" value="{{ code }}">{{ label }}</button>
+        {% endif %}
+    {% endfor %}
+</form>
     {% else %}
         <p>Aucune offre pour l'instant. Clique sur le bouton pour lancer une recherche.</p>
     {% endfor %}

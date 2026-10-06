@@ -13,7 +13,8 @@ class OffreClient
         private HttpClientInterface $httpClient,
         #[Autowire(env: 'LBA_API_TOKEN')] // va chercher la clé dans .env.local
         private string $token,
-    ) {}
+    ) {
+    }
 
     public function rechercher(float $latitude, float $longitude, int $rayon, string $romes): array
     {

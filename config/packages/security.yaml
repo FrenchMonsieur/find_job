@@ -1,31 +1,41 @@
 security:
-    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
-    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    # Un seul utilisateur : toi
     providers:
-        users_in_memory: { memory: null }
+        users_in_memory:
+            memory:
+                users:
+                    bou: { password: '%env(APP_PASSWORD_HASH)%', roles: ['ROLE_USER'] }
 
     firewalls:
         dev:
-            # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
         main:
             lazy: true
             provider: users_in_memory
 
-            # Activate different ways to authenticate:
-            # https://symfony.com/doc/current/security.html#the-firewall
+            # Connexion par formulaire
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                default_target_path: app_offre
 
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
+            logout:
+                path: app_logout
 
-    # Note: Only the *first* matching rule is applied
+            # Anti-force brute : 5 essais ratés = bloqué 15 minutes
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+    # Qui a le droit d'aller où (la première règle qui correspond gagne)
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/login, roles: PUBLIC_ACCESS }   # la page de connexion est ouverte à tous
+        - { path: ^/, roles: ROLE_USER }            # tout le reste : connecté obligatoire
 
 when@test:
     security:

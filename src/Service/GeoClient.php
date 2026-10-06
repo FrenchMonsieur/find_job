@@ -8,7 +8,9 @@ class GeoClient
 {
     private const URL = 'https://data.geopf.fr/geocodage/search';
 
-    public function __construct(private HttpClientInterface $httpClient) {}
+    public function __construct(private HttpClientInterface $httpClient)
+    {
+    }
 
     /** Transforme un nom de ville en coordonnées GPS. Renvoie null si la ville est introuvable. */
     public function trouverVille(string $ville): ?array
