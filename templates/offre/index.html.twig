@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes offres d'alternance{% endblock %}
+
+{% block body %}
+    <h1>Mes offres ({{ offres|length }})</h1>
+
+    {% for message in app.flashes('success') %}
+        <p><strong>{{ message }}</strong></p>
+    {% endfor %}
+
+    <form method="post" action="{{ path('app_offre_importer') }}">
+        <button type="submit">🔍 Chercher de nouvelles offres</button>
+    </form>
+
+    {% for offre in offres %}
+        <article>
+            <h2>{{ offre.titre }}</h2>
+            <p>{{ offre.entreprise ?? 'Entreprise non précisée' }} — {{ offre.adresse }}</p>
+            <p>Statut : {{ offre.statut }} · trouvée le {{ offre.dateAjout|date('d/m/Y') }}</p>
+            {% if offre.url %}
+                <a href="{{ offre.url }}" target="_blank">Voir l'offre</a>
+            {% endif %}
+        </article>
+    {% else %}
+        <p>Aucune offre pour l'instant. Clique sur le bouton pour lancer une recherche.</p>
+    {% endfor %}
+{% endblock %}
